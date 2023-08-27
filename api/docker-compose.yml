@@ -1,0 +1,119 @@
+version: '3'
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    volumes:
+      - /var/lib/rabbitmq
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    env_file:
+      - .env
+    networks:
+      - messenger
+    
+
+  postgres:
+    image: postgres
+    hostname: postgres
+    container_name: postgresql
+    restart: always
+    ports:
+      - '5432:5432'
+    environment:
+        POSTGRES_USER: ${POSTGRES_USER}
+        POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+        POSTGRES_DB: ${POSTGRES_DB}
+    env_file:
+      - .env
+    networks:
+      - messenger
+    volumes:
+      - postgres:/data/postgres
+
+  pg_admin:
+    image: dpage/pgadmin4
+    depends_on:
+      - postgres
+    env_file:
+      - .env
+    ports:
+      - '15432:80'
+    networks:
+      - messenger
+
+  redis:
+    image: redis
+    container_name: redis
+    # command: redis-server --requirepass $$REDIS_PASS
+    command: /bin/sh -c "redis-server --requirepass $$REDIS_PASS"
+    ports:
+      - '6379:6379'
+    env_file:
+      - .env
+    networks:
+      - messenger
+    volumes:
+      - redis:/data/redis
+
+  # api: 
+  #   build: 
+  #     context: ./
+  #     dockerfile: ./apps/api/Dockerfile
+  #   ports:
+  #     - '4000:5000'
+  #   env_file:
+  #     - .env
+  #   depends_on:
+  #     - rabbitmq
+  #     - auth
+  #   volumes:
+  #     - .:/usr/src/app # any change to base folder should be reflected
+  #     - /usr/src/app/node_modules
+  #   command: npm run start:dev api
+  
+  # auth:
+  #   build: 
+  #     context: ./
+  #     dockerfile: ./apps/auth/Dockerfile
+  #   env_file:
+  #     - .env
+  #   depends_on:
+  #     - redis
+  #     - postgres
+  #     - rabbitmq
+  #   volumes:
+  #     - .:/usr/src/app # any change to base folder should be reflected
+  #     - /usr/src/app/node_modules
+  #   command: npm run start:dev auth 
+
+  # chat: 
+  #   build: 
+  #     context: ./
+  #     dockerfile: ./apps/chat/Dockerfile
+  #   env_file:
+  #     - .env
+  #   depends_on:
+  #     - redis
+  #     - postgres
+  #     - rabbitmq
+  #   ports:
+  #     - '7000:7000'
+  #   volumes:
+  #     - .:/usr/src/app # any change to base folder should be reflected
+  #     - /usr/src/app/node_modules
+  #   command: npm run start:dev chat 
+  
+
+networks:
+  messenger:
+    driver: bridge
+
+volumes:
+    redis:
+    postgres:
+    
+
+
+      
